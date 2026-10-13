@@ -49,6 +49,11 @@ private fun RuntimeShader.setStandardUniforms(width: Float, height: Float, time:
     runCatching { setFloatUniform("iResolution", width, height) }
     runCatching { setFloatUniform("iTime", time) }
     runCatching { setFloatUniform("iTouch", touch.x, touch.y) }
+    // Looping phase 0.0 -> 1.0 every 2 seconds (same as a 2000 ms linear tween).
+    runCatching { setFloatUniform("phase", (time % 2f) / 2f) }
+    // Colors for the color-loop sample; declared in AGSL as `layout(color) uniform half4`.
+    runCatching { setColorUniform("colorA", 0xFF683DB8.toInt()) }
+    runCatching { setColorUniform("colorB", 0xFF4052F2.toInt()) }
 }
 
 /** Seconds since this composable first appeared, updated every frame. */

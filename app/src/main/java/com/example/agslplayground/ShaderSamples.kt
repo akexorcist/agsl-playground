@@ -7,6 +7,8 @@ package com.example.agslplayground
  *   iResolution (float2) – size of the drawing area in pixels
  *   iTime       (float)  – seconds since the preview started
  *   iTouch      (float2) – last touch position in pixels (center by default)
+ *   phase       (float)  – looping 0.0 → 1.0 every 2 seconds
+ *   colorA/colorB (half4, `layout(color)`) – purple #683DB8 and blue #4052F2
  *
  * "Effect" samples are applied to normal Compose UI through RenderEffect and
  * must declare `uniform shader content;` – the UI underneath, as a child shader.
@@ -165,8 +167,25 @@ object ShaderSamples {
             """.trimIndent(),
         ),
         ShaderSample(
+            id = "color_loop",
+            title = "6. Color loop (phase)",
+            description = "Looping blend between two colors, driven by a 0.0 → 1.0 phase.",
+            source = """
+                uniform float phase;                   // 0.0 -> 1.0, then restarts
+                layout(color) uniform half4 colorA;    // set from Kotlin: purple #683DB8
+                layout(color) uniform half4 colorB;    // set from Kotlin: blue   #4052F2
+
+                half4 main(float2 fragCoord) {
+                    // phase 0.0 -> colorA, 0.5 -> colorB, 1.0 -> colorA again
+                    float t = 0.5 - 0.5 * cos(phase * 6.2831853);
+
+                    return half4(mix(colorA.rgb, colorB.rgb, half(t)), 1.0);
+                }
+            """.trimIndent(),
+        ),
+        ShaderSample(
             id = "wave_effect",
-            title = "6. Wavy UI (RenderEffect)",
+            title = "7. Wavy UI (RenderEffect)",
             description = "Distort real Compose UI: the UI comes in as `uniform shader content`.",
             isEffect = true,
             source = """
@@ -186,7 +205,7 @@ object ShaderSamples {
         ),
         ShaderSample(
             id = "chromatic",
-            title = "7. Chromatic aberration",
+            title = "8. Chromatic aberration",
             description = "Sample R, G and B at different offsets. Drag to move the center.",
             isEffect = true,
             source = """

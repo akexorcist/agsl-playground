@@ -5,7 +5,7 @@ live code editor. Requires Android 13+ (API 33), where `RuntimeShader` was added
 
 ## What's inside
 
-- **7 samples**, from a first gradient to noise, distance fields, touch ripples,
+- **8 samples**, from a first gradient to noise, distance fields, touch ripples,
   and effects applied to real Compose UI through `RenderEffect`.
 - **Live editor**: change the code and the preview recompiles ~0.3 s after you stop
   typing. Compiler errors appear in the bar under the code; the last working
@@ -19,6 +19,8 @@ Every shader can use these uniforms, set by the app each frame:
 | `iResolution` | `float2` | Size of the drawing area in pixels       |
 | `iTime`       | `float`  | Seconds since the preview started        |
 | `iTouch`      | `float2` | Last touch position in pixels            |
+| `phase`       | `float`  | Looping 0.0 → 1.0, restarts every 2 s    |
+| `colorA` / `colorB` | `half4` | Purple `#683DB8` / blue `#4052F2` (declare with `layout(color)`) |
 
 Effect samples also declare `uniform shader content;` — the UI underneath —
 and read it with `content.eval(coord)`.
