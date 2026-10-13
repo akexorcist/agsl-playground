@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -19,10 +20,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MaterialTheme(colorScheme = dynamicDarkColorScheme(LocalContext.current)) {
+                var crashReport by remember { mutableStateOf(CrashReporter.read(applicationContext)) }
                 var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
                 val selected = selectedId?.let(ShaderSamples::byId)
 
-                if (selected == null) {
+                val report = crashReport
+                if (report != null) {
+                    CrashReportScreen(report = report, onContinue = {
+                        CrashReporter.clear(applicationContext)
+                        crashReport = null
+                    })
+                } else if (selected == null) {
                     SampleListScreen(onOpen = { selectedId = it.id })
                 } else {
                     BackHandler { selectedId = null }
