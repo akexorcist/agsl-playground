@@ -19,6 +19,8 @@ data class ShaderSample(
     val description: String,
     val source: String,
     val isEffect: Boolean = false,
+    /** Effect samples only: use the droid image as the UI under the effect instead of the demo card. */
+    val useImage: Boolean = false,
 )
 
 object ShaderSamples {
@@ -224,6 +226,23 @@ object ShaderSamples {
                     half r = content.eval(fragCoord + offset).r;
                     half b = content.eval(fragCoord - offset).b;
                     return half4(r, center.g, b, center.a);
+                }
+            """.trimIndent(),
+        ),
+        ShaderSample(
+            id = "grayscale",
+            title = "9. Grayscale (RenderEffect)",
+            description = "Simplest UI effect: no uniforms except the UI itself, as `uniform shader content`.",
+            isEffect = true,
+            useImage = true,
+            source = """
+                uniform shader content;
+
+                half4 main(float2 fragCoord) {
+                    half4 color = content.eval(fragCoord);
+                    half gray = (color.r + color.g + color.b) / 3.0;
+
+                    return half4(half3(gray), color.a);
                 }
             """.trimIndent(),
         ),

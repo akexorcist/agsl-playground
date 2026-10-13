@@ -111,7 +111,7 @@ fun SampleListScreen(onOpen: (ShaderSample) -> Unit) {
                             sample.id in live -> {
                                 val shader = remember(sample.id) { compileShader(sample.source).getOrNull() }
                                 if (shader != null) {
-                                    ShaderView(shader, sample.isEffect, Modifier.fillMaxSize())
+                                    ShaderView(shader, sample.isEffect, Modifier.fillMaxSize(), useImage = sample.useImage)
                                 }
                             }
                             sample.id in blocked -> Text(
@@ -214,7 +214,7 @@ fun PlaygroundScreen(sample: ShaderSample, onBack: () -> Unit) {
                             }) { Text("Run anyway") }
                         }
                     } else {
-                        shader?.let { ShaderView(it, sample.isEffect, Modifier.fillMaxSize(), interactive = true) }
+                        shader?.let { ShaderView(it, sample.isEffect, Modifier.fillMaxSize(), interactive = true, useImage = sample.useImage) }
                     }
                 }
             }

@@ -3,6 +3,7 @@ package com.example.agslplayground
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -115,7 +118,12 @@ fun ShaderCanvas(shader: RuntimeShader, modifier: Modifier = Modifier, interacti
 
 /** Applies an AGSL shader as a RenderEffect to regular Compose UI. */
 @Composable
-fun ShaderEffectBox(shader: RuntimeShader, modifier: Modifier = Modifier, interactive: Boolean = false) {
+fun ShaderEffectBox(
+    shader: RuntimeShader,
+    modifier: Modifier = Modifier,
+    interactive: Boolean = false,
+    useImage: Boolean = false,
+) {
     val time by rememberShaderTime()
     var touch by remember { mutableStateOf(Offset.Unspecified) }
 
@@ -138,7 +146,7 @@ fun ShaderEffectBox(shader: RuntimeShader, modifier: Modifier = Modifier, intera
                 }.getOrNull()
             },
     ) {
-        DemoContent()
+        if (useImage) DroidImage() else DemoContent()
     }
 }
 
@@ -165,11 +173,28 @@ private fun DemoContent() {
     }
 }
 
+/** A plain image as the UI under an effect. */
+@Composable
+private fun DroidImage() {
+    Image(
+        painter = painterResource(R.drawable.demo_image),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
 /** Renders a sample the right way depending on whether it's an effect. */
 @Composable
-fun ShaderView(shader: RuntimeShader, isEffect: Boolean, modifier: Modifier = Modifier, interactive: Boolean = false) {
+fun ShaderView(
+    shader: RuntimeShader,
+    isEffect: Boolean,
+    modifier: Modifier = Modifier,
+    interactive: Boolean = false,
+    useImage: Boolean = false,
+) {
     if (isEffect) {
-        ShaderEffectBox(shader, modifier, interactive)
+        ShaderEffectBox(shader, modifier, interactive, useImage)
     } else {
         ShaderCanvas(shader, modifier, interactive)
     }
