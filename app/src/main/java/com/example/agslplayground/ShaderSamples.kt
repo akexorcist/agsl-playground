@@ -175,11 +175,13 @@ object ShaderSamples {
                 layout(color) uniform half4 colorA;    // set from Kotlin: purple #683DB8
                 layout(color) uniform half4 colorB;    // set from Kotlin: blue   #4052F2
 
+                const float TWO_PI = 6.2831853;        // one full circle, in radians
+
                 half4 main(float2 fragCoord) {
                     // phase 0.0 -> colorA, 0.5 -> colorB, 1.0 -> colorA again
-                    float t = 0.5 - 0.5 * cos(phase * 6.2831853);
+                    float blend = 0.5 - 0.5 * cos(phase * TWO_PI);
 
-                    return half4(mix(colorA.rgb, colorB.rgb, half(t)), 1.0);
+                    return half4(mix(colorA.rgb, colorB.rgb, half(blend)), 1.0);
                 }
             """.trimIndent(),
         ),
