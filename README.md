@@ -38,8 +38,8 @@ and read it with `content.eval(coord)`.
 1. Create a new GitHub repository and upload these files (keep the folder structure,
    including `.github/` and `debug.keystore`).
 2. GitHub Actions builds the app automatically on every push (Actions tab).
-3. When it finishes, open the repo's **Releases → Latest build** on your tablet and
-   tap `agsl-playground.apk`.
+3. When it finishes, open the repo's latest release on your tablet and
+   tap `agsl-playground.apk` — or add the repo URL in Obtainium for automatic updates.
 4. Allow your browser / My Files to install unknown apps when Android asks.
 
 The included `debug.keystore` signs every build the same way, so new builds

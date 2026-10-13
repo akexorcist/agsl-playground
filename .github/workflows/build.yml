@@ -31,16 +31,16 @@ jobs:
           name: agsl-playground-apk
           path: app/build/outputs/apk/debug/*.apk
 
-      # Puts the APK on a "latest" release so you can download it directly
-      # from your tablet's browser (no zip to extract).
-      - name: Publish to "latest" release
+      # Publishes each build as its own release (build-1, build-2, ...) so
+      # Obtainium detects new versions and you can download from the tablet.
+      - name: Publish release
         if: github.ref_name == github.event.repository.default_branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk agsl-playground.apk
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest agsl-playground.apk \
-            --title "Latest build" \
+          gh release create "build-${{ github.run_number }}" agsl-playground.apk \
+            --title "Build ${{ github.run_number }}" \
             --notes "Built from ${{ github.sha }}" \
-            --prerelease
+            --latest

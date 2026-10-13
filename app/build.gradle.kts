@@ -15,8 +15,11 @@ android {
         // AGSL (RuntimeShader) was added in Android 13 / API 33.
         minSdk = 33
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // CI sets GITHUB_RUN_NUMBER, so every build gets a higher version
+        // and Obtainium / Android see it as an update.
+        val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = buildNumber
+        versionName = "1.0.$buildNumber"
     }
 
     // A fixed debug key is committed to the repo so every CI build is signed
