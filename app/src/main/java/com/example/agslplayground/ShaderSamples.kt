@@ -281,6 +281,35 @@ object ShaderSamples {
                 }
             """.trimIndent(),
         ),
+        ShaderSample(
+            id = "pixelate_average",
+            title = "12. Pixelate (average color)",
+            description = "Average a grid of samples inside each block. Compare with sample 11, which reads one pixel.",
+            isEffect = true,
+            useImage = true,
+            source = """
+                uniform shader content;
+
+                const float BLOCK_SIZE = 24.0;   // size of one block, in pixels
+                const int SAMPLES = 4;           // 4 x 4 = 16 samples inside each block
+
+                half4 main(float2 fragCoord) {
+                    float2 blockOrigin = floor(fragCoord / BLOCK_SIZE) * BLOCK_SIZE;
+                    float spacing = BLOCK_SIZE / float(SAMPLES);
+
+                    half4 sum = half4(0.0);
+                    for (int y = 0; y < SAMPLES; y++) {
+                        for (int x = 0; x < SAMPLES; x++) {
+                            // the middle of each small cell inside the block
+                            float2 p = blockOrigin + (float2(float(x), float(y)) + 0.5) * spacing;
+                            sum += content.eval(p);
+                        }
+                    }
+
+                    return sum / half(SAMPLES * SAMPLES);
+                }
+            """.trimIndent(),
+        ),
     )
 
     fun byId(id: String): ShaderSample? = all.firstOrNull { it.id == id }
