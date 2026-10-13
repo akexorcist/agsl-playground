@@ -38,22 +38,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/** Uniform names each compiled shader declares, so we never set one it doesn't have. */
+private val declaredUniforms: MutableMap<RuntimeShader, Set<String>> =
+    java.util.Collections.synchronizedMap(java.util.WeakHashMap())
+private val UNIFORM_DECLARATION = Regex("""\buniform\s+\w+\s+(\w+)\s*;""")
+
 /** Compiles AGSL source. On failure the exception message is the compiler log. */
-fun compileShader(source: String): Result<RuntimeShader> = runCatching { RuntimeShader(source) }
+fun compileShader(source: String): Result<RuntimeShader> = runCatching {
+    RuntimeShader(source).also { shader ->
+        declaredUniforms[shader] = UNIFORM_DECLARATION.findAll(source).map { it.groupValues[1] }.toSet()
+    }
+}
 
 /**
  * Sets the standard uniforms. setFloatUniform() throws if the shader doesn't
  * declare (or doesn't use) a uniform, so each one is set independently.
  */
 private fun RuntimeShader.setStandardUniforms(width: Float, height: Float, time: Float, touch: Offset) {
-    runCatching { setFloatUniform("iResolution", width, height) }
-    runCatching { setFloatUniform("iTime", time) }
-    runCatching { setFloatUniform("iTouch", touch.x, touch.y) }
+    val declared = declaredUniforms[this] ?: return
+    // Setting a uniform the shader doesn't declare throws, so only set declared ones.
+    if ("iResolution" in declared) runCatching { setFloatUniform("iResolution", width, height) }
+    if ("iTime" in declared) runCatching { setFloatUniform("iTime", time) }
+    if ("iTouch" in declared) runCatching { setFloatUniform("iTouch", touch.x, touch.y) }
     // Looping phase 0.0 -> 1.0 every 2 seconds (same as a 2000 ms linear tween).
-    runCatching { setFloatUniform("phase", (time % 2f) / 2f) }
+    if ("phase" in declared) runCatching { setFloatUniform("phase", (time % 2f) / 2f) }
     // Colors for the color-loop sample; declared in AGSL as `layout(color) uniform half4`.
-    runCatching { setColorUniform("colorA", 0xFF683DB8.toInt()) }
-    runCatching { setColorUniform("colorB", 0xFF4052F2.toInt()) }
+    if ("colorA" in declared) runCatching { setColorUniform("colorA", 0xFF683DB8.toInt()) }
+    if ("colorB" in declared) runCatching { setColorUniform("colorB", 0xFF4052F2.toInt()) }
 }
 
 /** Seconds since this composable first appeared, updated every frame. */

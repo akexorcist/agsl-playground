@@ -141,6 +141,7 @@ class PlaygroundApp : Application() {
         super.onCreate()
         CrashReporter.install(this)
         CrashReporter.recordPreviousExits(this)
+        PreviewGuard.blockPendingFromLastRun(this)
     }
 }
 
