@@ -86,6 +86,9 @@ jobs:
         if: always()
         run: |
           {
+            echo "== script log =="
+            cat ci-script.log 2>/dev/null | head -40 || echo "(no ci-script.log)"
+            ls -la
             echo "== test failures =="
             grep -rh -A15 "<failure" app/build/outputs/androidTest-results 2>/dev/null | head -60
             echo "== crashes in logcat =="
@@ -104,4 +107,5 @@ jobs:
           path: |
             logcat-full.txt
             gradle-ui.log
+            ci-script.log
             app/build/reports/androidTests
