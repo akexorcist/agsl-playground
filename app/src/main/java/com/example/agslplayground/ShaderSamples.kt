@@ -263,6 +263,24 @@ object ShaderSamples {
                 }
             """.trimIndent(),
         ),
+        ShaderSample(
+            id = "pixelate",
+            title = "11. Pixelate (RenderEffect)",
+            description = "Sample the UI once per block: every pixel in a block gets the block's center color.",
+            isEffect = true,
+            useImage = true,
+            source = """
+                uniform shader content;
+
+                const float BLOCK_SIZE = 24.0;   // size of one block, in pixels
+
+                half4 main(float2 fragCoord) {
+                    float2 blockCenter = (floor(fragCoord / BLOCK_SIZE) + 0.5) * BLOCK_SIZE;
+
+                    return content.eval(blockCenter);
+                }
+            """.trimIndent(),
+        ),
     )
 
     fun byId(id: String): ShaderSample? = all.firstOrNull { it.id == id }
