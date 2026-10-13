@@ -22,7 +22,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
+import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -61,9 +61,9 @@ private fun RuntimeShader.setStandardUniforms(width: Float, height: Float, time:
 private fun rememberShaderTime(): State<Float> {
     val time = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
-        val start = withFrameNanos { it }
+        val start = withInfiniteAnimationFrameNanos { it }
         while (true) {
-            withFrameNanos { time.floatValue = (it - start) / 1_000_000_000f }
+            withInfiniteAnimationFrameNanos { time.floatValue = (it - start) / 1_000_000_000f }
         }
     }
     return time
