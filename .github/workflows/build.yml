@@ -54,8 +54,16 @@ jobs:
             --latest
 
   ui-test:
+    name: ui-test (api ${{ matrix.api-level }}, ${{ matrix.renderer }})
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { api-level: 33, renderer: skiagl }
+          - { api-level: 34, renderer: skiagl }
+          - { api-level: 34, renderer: skiavk }
     steps:
       - uses: actions/checkout@v4
 
@@ -75,12 +83,13 @@ jobs:
       - name: Run UI tests on an emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: ${{ matrix.api-level }}
           target: google_apis
+          profile: pixel_tablet
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash .github/ci/run-ui-tests.sh
+          script: bash .github/ci/run-ui-tests.sh ${{ matrix.renderer }}
 
       - name: Report result
         if: always()
@@ -93,17 +102,19 @@ jobs:
             grep -rh -A15 "<failure" app/build/outputs/androidTest-results 2>/dev/null | head -60
             echo "== crashes in logcat =="
             grep -E -A40 "FATAL EXCEPTION|Fatal signal|ANR in" logcat-full.txt 2>/dev/null | head -120
+            echo "== native / graphics errors in logcat =="
+            grep -E " (E|F) (libc|DEBUG|skia|SkiaRenderEngine|HWUI|hwui|AndroidRuntime|OpenGLRenderer|vulkan)" logcat-full.txt 2>/dev/null | head -40
             echo "== gradle tail =="
             tail -40 gradle-ui.log 2>/dev/null
           } > report.txt
           level=notice; [ "${{ job.status }}" = "success" ] || level=error
-          bash .github/ci/annotate.sh "$level" "UI test report (${{ job.status }})" report.txt
+          bash .github/ci/annotate.sh "$level" "UI test api${{ matrix.api-level }} ${{ matrix.renderer }} (${{ job.status }})" report.txt
 
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-test-logs
+          name: ui-test-logs-${{ matrix.api-level }}-${{ matrix.renderer }}
           path: |
             logcat-full.txt
             gradle-ui.log

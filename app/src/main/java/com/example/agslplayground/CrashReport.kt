@@ -1,6 +1,8 @@
 package com.example.agslplayground
 
+import android.app.ActivityManager
 import android.app.Application
+import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.util.Log
@@ -51,6 +53,81 @@ object CrashReporter {
         }
     }
 
+    private val INTERESTING_EXITS = setOf(
+        ApplicationExitInfo.REASON_CRASH,
+        ApplicationExitInfo.REASON_CRASH_NATIVE,
+        ApplicationExitInfo.REASON_ANR,
+        ApplicationExitInfo.REASON_SIGNALED,
+        ApplicationExitInfo.REASON_INITIALIZATION_FAILURE,
+        ApplicationExitInfo.REASON_LOW_MEMORY,
+        ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE,
+    )
+
+    /**
+     * Native crashes (GPU driver, Skia) never reach the Java handler above, but Android
+     * remembers how each process ended. Add any new abnormal exit to the saved report.
+     */
+    fun recordPreviousExits(context: Context) = runCatching {
+        val appContext = context.applicationContext
+        val prefs = appContext.getSharedPreferences("crash_reporter", Context.MODE_PRIVATE)
+        val seen = prefs.getLong("last_exit_timestamp", 0L)
+        val exits = appContext.getSystemService(ActivityManager::class.java)
+            .getHistoricalProcessExitReasons(appContext.packageName, 0, 5)
+        val newest = exits.maxOfOrNull { it.timestamp } ?: return@runCatching
+        prefs.edit().putLong("last_exit_timestamp", newest).apply()
+
+        val fresh = exits.filter { it.timestamp > seen && it.reason in INTERESTING_EXITS }
+        if (fresh.isEmpty()) return@runCatching
+        val file = File(appContext.filesDir, FILE_NAME)
+        if (!file.exists()) {
+            file.writeText("Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
+        }
+        file.appendText("\n== Previous process exits (reported by Android) ==\n" + fresh.joinToString("\n\n") { describe(it) } + "\n")
+    }
+
+    private fun describe(info: ApplicationExitInfo): String = buildString {
+        appendLine("reason=${reasonName(info.reason)} status=${info.status} importance=${info.importance} process=${info.processName}")
+        appendLine("description=${info.description}")
+        appendLine("time=${java.util.Date(info.timestamp)} pss=${info.pss}KB rss=${info.rss}KB")
+        if (info.reason == ApplicationExitInfo.REASON_CRASH_NATIVE || info.reason == ApplicationExitInfo.REASON_ANR) {
+            runCatching {
+                info.traceInputStream?.use {
+                    appendLine("-- trace (readable text only) --")
+                    append(printableStrings(it.readBytes()))
+                }
+            }
+        }
+    }
+
+    private fun reasonName(reason: Int) = when (reason) {
+        ApplicationExitInfo.REASON_CRASH -> "CRASH (Java)"
+        ApplicationExitInfo.REASON_CRASH_NATIVE -> "CRASH_NATIVE"
+        ApplicationExitInfo.REASON_ANR -> "ANR"
+        ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED"
+        ApplicationExitInfo.REASON_INITIALIZATION_FAILURE -> "INITIALIZATION_FAILURE"
+        ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
+        ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "EXCESSIVE_RESOURCE_USAGE"
+        else -> "reason $reason"
+    }
+
+    /** Pulls readable strings (library names, function names, abort message) out of a binary trace. */
+    private fun printableStrings(bytes: ByteArray, minLength: Int = 6, limit: Int = 6000): String {
+        val out = StringBuilder()
+        val run = StringBuilder()
+        for (b in bytes) {
+            val c = b.toInt() and 0xFF
+            if (c in 32..126) {
+                run.append(c.toChar())
+            } else {
+                if (run.length >= minLength) out.appendLine(run)
+                run.clear()
+            }
+            if (out.length > limit) break
+        }
+        if (run.length >= minLength) out.appendLine(run)
+        return out.toString().take(limit)
+    }
+
     fun read(context: Context): String? =
         File(context.filesDir, FILE_NAME).takeIf { it.exists() }?.readText()
 
@@ -63,6 +140,7 @@ class PlaygroundApp : Application() {
     override fun onCreate() {
         super.onCreate()
         CrashReporter.install(this)
+        CrashReporter.recordPreviousExits(this)
     }
 }
 
