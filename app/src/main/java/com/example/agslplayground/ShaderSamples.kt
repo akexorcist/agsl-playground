@@ -246,6 +246,23 @@ object ShaderSamples {
                 }
             """.trimIndent(),
         ),
+        ShaderSample(
+            id = "grayscale_luminance",
+            title = "10. Grayscale (luminance weights)",
+            description = "Same effect, but with the Rec. 709 weights: green counts most, blue least.",
+            isEffect = true,
+            useImage = true,
+            source = """
+                uniform shader content;
+
+                half4 main(float2 fragCoord) {
+                    half4 color = content.eval(fragCoord);
+                    half gray = dot(color.rgb, half3(0.2126, 0.7152, 0.0722));  // Rec. 709 luminance
+
+                    return half4(half3(gray), color.a);
+                }
+            """.trimIndent(),
+        ),
     )
 
     fun byId(id: String): ShaderSample? = all.firstOrNull { it.id == id }
